@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-
-import subprocess
 import csv
 import pprint
+import subprocess
 
-host = "rdsf-md1-ph.mgmt.acrc.priv"
-hostmgmt = "rdsf-md1a-ph.mgmt.acrc.priv"
+host = "rdsf-md1-mv.mgmt.acrc.priv"
+hostmgmt = "rdsf-md1a-mv.mgmt.acrc.priv"
 interval = 5
 
 def write_metric(plugin_instance,type_instance,value):
-    print "PUTVAL %s/%s/%s interval=%s N:%s" % (host,plugin_instance,type_instance,interval,value)
+    print "PUTVAL %s/disk-%s/%s interval=%s N:%s" % (host,plugin_instance,type_instance,interval,value)
 
 def get_metrics():
     cmd = subprocess.Popen(["/bin/SMcli", hostmgmt, "-S", "-quick",
-                            "-c", "set session performanceMonitorInterval=%s; show allLogicalDrives performanceStats;"%interval], 
+                            "-c", "set session performanceMonitorInterval=%s; show allVirtualDisks performanceStats;"%interval], 
                              stdout=subprocess.PIPE)
     reader = csv.reader(cmd.stdout, delimiter=',', quotechar='"')
     cmd.wait()
@@ -33,21 +32,22 @@ def get_metrics():
 
     for line in reader:
         lineiter = iter(line)
-        ld = lineiter.next().replace("Logical Drive ","")
+        ld = lineiter.next().replace("Virtual Disk ","")
         lineiter.next() # Ignore Total IOs
-        write_metric("read-percent", ld, lineiter.next())
-        write_metric("primary-read-cache-hit-percent", ld, lineiter.next())
-        write_metric("primary-write-cache-hit-percent", ld, lineiter.next())
+
+        write_metric(ld, "percent-read_ratio", lineiter.next())
+        write_metric(ld, "percent-primary_read_cache_hit", lineiter.next())
+        write_metric(ld, "percent-primary_write_cache_hit", lineiter.next())
         lineiter.next() # Ignore SSD read cache hit
-        write_metric("mb-per-sec", ld, lineiter.next())
+        write_metric(ld, "gauge-throughput" , lineiter.next())
         lineiter.next() 
-        write_metric("iops", ld, lineiter.next())
+        write_metric(ld, "gauge-iops", lineiter.next())
         lineiter.next()
         lineiter.next()
         lineiter.next()
         lineiter.next()
         lineiter.next()
-        write_metric("io-latency", ld, lineiter.next())
+        write_metric(ld, "latency", lineiter.next())
 
 while True:
     get_metrics()
