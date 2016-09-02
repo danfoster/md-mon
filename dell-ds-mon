@@ -2,10 +2,7 @@
 import csv
 import pprint
 import subprocess
-
-hosts = [
-    ["rdsf-md1-mv.mgmt.acrc.priv", "rdsf-md1a-mv.mgmt.acrc.priv", "rdsf-md1b-mv.mgmt.acrc.priv"],
-    ["rdsf-md1-ph.mgmt.acrc.priv", "rdsf-md1a-ph.mgmt.acrc.priv", "rdsf-md1b-ph.mgmt.acrc.priv"]]
+import sys
 
 interval = 30
 
@@ -82,5 +79,4 @@ def get_metrics(host,controllera,controllerb):
 	write_metrics(metrics,host)
 
 while True:
-    for host in hosts:
-        get_metrics(host[0],host[1],host[2])
+        get_metrics(sys.argv[1],sys.argv[2],sys.argv[3])
