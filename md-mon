@@ -3,8 +3,10 @@ import csv
 import pprint
 import subprocess
 import sys
+import argparse
 
 interval = 30
+SMCLI = "/opt/dell/mdstoragemanager/client/SMcli"
 
 def write_metric(plugin_instance,type_instance,value, host):
     print "PUTVAL %s/disk-%s/%s interval=%s N:%s" % (host,plugin_instance,type_instance,interval,value)
@@ -18,13 +20,13 @@ def get_metrics(host,controllera,controllerb):
         metrics = {}
 
         #controller A
-        cmd_a = subprocess.Popen(["/bin/SMcli", controllera, "-S", "-quick",
+        cmd_a = subprocess.Popen([SMCLI, controllera, "-S", "-quick",
                                 "-c", "set session performanceMonitorInterval=%s; show allVirtualDisks performanceStats;"%interval], 
                                  stdout=subprocess.PIPE)
         reader_a = csv.reader(cmd_a.stdout, delimiter=',', quotechar='"')
 
         #controller B
-        cmd_b = subprocess.Popen(["/bin/SMcli", controllerb, "-S", "-quick",
+        cmd_b = subprocess.Popen([SMCLI, controllerb, "-S", "-quick",
                                 "-c", "set session performanceMonitorInterval=%s; show allVirtualDisks performanceStats;"%interval], 
                                  stdout=subprocess.PIPE)
         reader_b = csv.reader(cmd_b.stdout, delimiter=',', quotechar='"')
@@ -78,5 +80,11 @@ def get_metrics(host,controllera,controllerb):
 
 	write_metrics(metrics,host)
 
+parser = argparse.ArgumentParser(description='Monitor Dell MD Array performance stats via collectd')
+parser.add_argument('name', help='Name of array')
+parser.add_argument('controller_a', help='hostname or IP of controller A')
+parser.add_argument('controller_b', help='hostname or IP of controller B')
+args = parser.parse_args()
+
 while True:
-        get_metrics(sys.argv[1],sys.argv[2],sys.argv[3])
+        get_metrics(args.name,args.controller_a,args.controller_b)
